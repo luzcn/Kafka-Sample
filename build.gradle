@@ -1,0 +1,99 @@
+buildscript {
+    repositories {
+        jcenter()
+    }
+    dependencies {
+        //Check for the latest version here: http://plugins.gradle.org/plugin/com.jfrog.artifactory
+        classpath "org.jfrog.buildinfo:build-info-extractor-gradle:4+"
+    }
+}
+
+plugins {
+    id 'java'
+    id 'idea'
+    id 'application'
+    id 'com.github.johnrengelman.shadow' version '4.0.3'
+    id "com.adarshr.test-logger" version "1.5.0"
+    id 'com.github.sherter.google-java-format' version '0.8'
+}
+
+apply plugin: "com.jfrog.artifactory"
+
+sourceCompatibility = 11
+targetCompatibility = 11
+
+repositories {
+    mavenCentral()
+    jcenter()
+    maven {
+        url "http://packages.confluent.io/maven/"
+    }
+}
+
+mainClassName = 'KafkaConsumer'
+
+artifactory {
+    contextUrl = 'https://artifactory.nordstrom.com/artifactory'
+    resolve {
+        repository {
+            repoKey = 'generic-local'
+            username = System.getenv("ARTIFACTORY_USER") ?: "$ARTIFACTORY_USER"
+            password = System.getenv("ARTIFACTORY_PASSWORD") ?: "$ARTIFACTORY_PASSWORD"
+            maven = true
+        }
+    }
+}
+
+def avroVersion = '1.8.2'
+def confluentVersion = '5.1.0'
+def kafkaVersion = '2.1.0'
+def junitVersion = "5.3.1"
+def log4jVersion = "2.11.1"
+def lombokVersion = "1.18.2"
+
+def schemaVersion = System.getenv('SCHEMA_VERSION') ?: project.findProperty("SCHEMA_VERSION") ?: 'master-+'
+
+dependencies {
+
+    compile "wine:canonical-entities:${schemaVersion}"
+    annotationProcessor "org.projectlombok:lombok:${lombokVersion}"
+
+    compile "com.google.code.gson:gson:2.8.5"
+    compile "commons-lang:commons-lang:2.2"
+    compile "io.confluent:kafka-avro-serializer:${confluentVersion}"
+    compile "io.confluent:kafka-streams-avro-serde:${confluentVersion}"
+    compile "io.dropwizard.metrics:metrics-jvm:4.0.3"
+    compile "org.apache.avro:avro:${avroVersion}"
+    compile "org.apache.kafka:kafka-clients:${kafkaVersion}"
+    compile "org.apache.kafka:kafka-streams:${kafkaVersion}"
+    compile "org.apache.logging.log4j:log4j-api:${log4jVersion}"
+    compile "org.apache.logging.log4j:log4j-core:${log4jVersion}"
+    compile "org.apache.logging.log4j:log4j-slf4j-impl:${log4jVersion}"
+    compile "org.coursera:metrics-datadog:1.1.13"
+
+    compileOnly "org.projectlombok:lombok:${lombokVersion}"
+
+    testCompile "org.apache.directory.studio:org.apache.commons.io:2.4"
+    testCompile "org.apache.kafka:kafka-streams-test-utils:${kafkaVersion}"
+    testCompile "org.junit.jupiter:junit-jupiter-api:${junitVersion}"
+    testCompile "org.mockito:mockito-core:2.21.0"
+
+    testRuntime "org.junit.jupiter:junit-jupiter-engine:${junitVersion}"
+}
+
+test {
+    useJUnitPlatform()
+    reports {
+        html.enabled = true
+        html.destination file("${buildDir}/reports/test")
+    }
+
+    environment "KAFKA_SCHEMA_REGISTRY_URL", "https://schema-registry.nonprod.us-west-2.aws.proton.nordstrom.com"
+    environment "KAFKA_SERVERS", "kafka.nonprod.us-west-2.aws.proton.nordstrom.com:9093"
+    environment "STATSD_HOST", "localhost"
+    environment "STATSD_PORT", "8125"
+    environment "STATSD_TAGS", "env:dev,service:wine-raw-events-processor"
+    environment "ENV", "staging"
+    environment "SOURCE_EVENT_TOPIC_NAME", "source-test"
+    environment "WINE_EVENT_TOPIC_NAME", "event-test"
+}

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration>
+  <Appenders>
+    <Console name="STDOUT" target="SYSTEM_OUT">
+      <PatternLayout pattern="%d{yyyy-MM-dd'T'HH:mm:ss:SSSSSSX} [%t] %-5level %logger{36} - %msg%n" />
+    </Console>
+  </Appenders>
+  <Loggers>
+    <Logger name="org.apache.kafka" level="ERROR">
+      <AppenderRef ref="STDOUT"/>
+    </Logger>
+    <Logger name="io.confluent.kafka.serializers.KafkaAvroDeserializerConfig" level="ERROR">
+      <AppenderRef ref="STDOUT"/>
+    </Logger>
+    <Root level="info">
+      <AppenderRef ref="STDOUT"/>
+    </Root>
+  </Loggers>
+</Configuration>

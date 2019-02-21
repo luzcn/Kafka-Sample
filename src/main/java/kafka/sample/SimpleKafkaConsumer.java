@@ -1,5 +1,5 @@
-import com.nordstrom.canonical.Event;
-import com.nordstrom.canonical.Key;
+package kafka.sample;
+
 import io.confluent.kafka.serializers.AbstractKafkaAvroSerDeConfig;
 import io.confluent.kafka.serializers.KafkaAvroDeserializer;
 import io.confluent.kafka.serializers.KafkaAvroDeserializerConfig;
@@ -9,12 +9,12 @@ import java.util.Arrays;
 import java.util.Properties;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.avro.generic.GenericRecord;
+import org.apache.avro.specific.SpecificRecord;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.producer.ProducerConfig;
-
 
 @Slf4j
 public class SimpleKafkaConsumer {
@@ -23,17 +23,17 @@ public class SimpleKafkaConsumer {
   private static final String sasl_password =
       "MMbguxx8RIgnht41IKSVDW7gRiQs5JIqM0rsfxH6V_qQTs_ZxEAlIkmYMzaKIlb6USQKiFdn5Ij19fzbL5T5zz5_-FZfB2KyM_KSog0VtcBtTIGNjK9PQmS_wprmvx3L";
 
-
   public static void main(String[] args) {
-
-    log.info("TEST INFO");
-
-    log.error("TEST ERROR");
+    //
+    //
+    // log.info("[Test={}]", "data");
+    //
+    // log.error("TEST ERROR");
     fetchFromPublicClusterSpecificRecord();
   }
 
   private static void fetchFromPublicClusterSpecificRecord() {
-    String topicName = "WINE_SourceEvents_avro";
+    String topicName = "warhouse-events_avro";
 
     final String sasl_username = "humble-gorilla";
     final String sasl_password =
@@ -46,7 +46,7 @@ public class SimpleKafkaConsumer {
     var jaasConfig = String.format(jaasTemplate, sasl_username, sasl_password);
 
     props.put("bootstrap.servers", "kafka.nonprod.us-west-2.aws.proton.nordstrom.com:9093");
-    props.put("group.id", "sample-consumer");
+    props.put("group.id", "sample-consumer-1");
     props.put("enable.auto.commit", "true");
     props.put("auto.commit.interval.ms", "1000");
     props.put("session.timeout.ms", "30000");
@@ -61,19 +61,21 @@ public class SimpleKafkaConsumer {
     props.put("sasl.mechanism", "SCRAM-SHA-512");
     props.put("sasl.jaas.config", jaasConfig);
 
-    props.put("schema.registry.url",
+    props.put(
+        "schema.registry.url",
         "https://schema-registry.nonprod.us-west-2.aws.proton.nordstrom.com");
 
     props.put(AbstractKafkaAvroSerDeConfig.BASIC_AUTH_CREDENTIALS_SOURCE, "SASL_INHERIT");
 
-    KafkaConsumer<Key, Event> consumer = new KafkaConsumer<>(props);
+    KafkaConsumer<SpecificRecord, SpecificRecord> consumer = new KafkaConsumer<>(props);
     consumer.subscribe(Arrays.asList(topicName));
 
     //    consumer.assign(Arrays.asList(new TopicPartition(topicName, 0)));
     log.debug("Starting fetching messages from " + topicName);
     try {
       while (true) {
-        ConsumerRecords<Key, Event> records = consumer.poll(Duration.ofMillis(100));
+        ConsumerRecords<SpecificRecord, SpecificRecord> records =
+            consumer.poll(Duration.ofMillis(100));
 
         for (var record : records) {
           System.out.println(record.value().toString());
@@ -106,14 +108,15 @@ public class SimpleKafkaConsumer {
     props.put("sasl.jaas.config", jaasConfig);
 
     props.put(ProducerConfig.COMPRESSION_TYPE_CONFIG, "zstd");
-    props.put("schema.registry.url",
+    props.put(
+        "schema.registry.url",
         "https://schema-registry.nonprod.us-west-2.aws.proton.nordstrom.com");
 
     props.put(AbstractKafkaAvroSerDeConfig.BASIC_AUTH_CREDENTIALS_SOURCE, "SASL_INHERIT");
 
-//    props.put(
-//        StreamsConfig.DEFAULT_DESERIALIZATION_EXCEPTION_HANDLER_CLASS_CONFIG,
-//        LogAndContinueExceptionHandler.class);
+    //    props.put(
+    //        StreamsConfig.DEFAULT_DESERIALIZATION_EXCEPTION_HANDLER_CLASS_CONFIG,
+    //        LogAndContinueExceptionHandler.class);
 
     // props.put(KafkaAvroSerializerConfig.SCHEMA_REGISTRY_URL_CONFIG,
     //     "https://schema-registry.nonprod.us-west-2.aws.proton.nordstrom.com");
@@ -127,13 +130,15 @@ public class SimpleKafkaConsumer {
     log.debug("Starting fetching messages from " + topicName);
     try {
       while (true) {
-        ConsumerRecords<GenericRecord, GenericRecord> records = consumer
-            .poll(Duration.ofMillis(100));
+        ConsumerRecords<GenericRecord, GenericRecord> records =
+            consumer.poll(Duration.ofMillis(100));
 
         for (ConsumerRecord record : records) {
           System.out.println(
-              "Consumer record: " + ((GenericRecord) record.key()).get("facilityId") + " " + record
-                  .value().toString());
+              "Consumer record: "
+                  + ((GenericRecord) record.key()).get("facilityId")
+                  + " "
+                  + record.value().toString());
         }
       }
     } finally {
@@ -155,8 +160,7 @@ public class SimpleKafkaConsumer {
     props.put("auto.offset.reset", "earliest");
 
     props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, KafkaAvroDeserializer.class);
-    props.put(
-        ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, KafkaAvroDeserializer.class);
+    props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, KafkaAvroDeserializer.class);
 
     // props.put(StreamsConfig.DEFAULT_DESERIALIZATION_EXCEPTION_HANDLER_CLASS_CONFIG,
     //     LogAndContinueExceptionHandler.class);
@@ -170,8 +174,8 @@ public class SimpleKafkaConsumer {
     log.debug("Starting fetching messages from " + topicName);
     try {
       while (true) {
-        ConsumerRecords<GenericRecord, GenericRecord> records = consumer
-            .poll(Duration.ofMillis(1000));
+        ConsumerRecords<GenericRecord, GenericRecord> records =
+            consumer.poll(Duration.ofMillis(1000));
 
         for (ConsumerRecord<GenericRecord, GenericRecord> record : records) {
 

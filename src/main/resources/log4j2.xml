@@ -2,16 +2,30 @@
 <Configuration>
   <Appenders>
     <Console name="STDOUT" target="SYSTEM_OUT">
-      <PatternLayout pattern="%d{yyyy-MM-dd'T'HH:mm:ss:SSSSSSX} [%t] %-5level %logger{36} - %msg%n" />
+      <PatternLayout
+        pattern="%msg %n"/>
+    </Console>
+
+    <Console name="STDOUT_INFO" target="SYSTEM_OUT">
+      <PatternLayout
+        pattern="%highlight{%p} %d{yyyy-MM-dd'T'HH:mm:ss:SSSSSSX} [ThreadName=%t] %msg %n"/>
     </Console>
   </Appenders>
+
+
   <Loggers>
-    <Logger name="org.apache.kafka" level="ERROR">
+    <Logger name="org.apache.kafka" level="ERROR" additivity="false">
       <AppenderRef ref="STDOUT"/>
     </Logger>
-    <Logger name="io.confluent.kafka.serializers.KafkaAvroDeserializerConfig" level="ERROR">
+
+    <Logger name="io.confluent.kafka.serializers" level="ERROR">
       <AppenderRef ref="STDOUT"/>
     </Logger>
+
+    <Logger name="kafka.sample" level="INFO" additivity="false">
+      <AppenderRef ref="STDOUT_INFO"/>
+    </Logger>
+
     <Root level="info">
       <AppenderRef ref="STDOUT"/>
     </Root>

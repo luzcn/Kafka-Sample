@@ -29,26 +29,41 @@ public class SimpleKafkaProducer {
   // private static final String topicName = "WINE_ProcessedEvents_avro";
   // https://kafka-manager.proton.platform.r53.nordstrom.net/clusters/nonprod/topics/WINE_TestEvents_string
 
-  private static final String sasl_username = "humble-gorilla.4X0BQT84X4EU5W5";
+  private static final String sasl_username = "humble-gorilla.4X0BQT84X4EU5W5"; // nonprod
+  // private static final String sasl_username = "humble-gorilla.4DNBS9UESC6EYJG"; // prod
+
+  // nonprod
   private static final String sasl_password =
       "iQBtqUmhAJ1le_OVr_lXVs7opHXWerDhCxkefYTQLXVzY9r5i1ULSkepWC-r8Lj1-ST-Ergm7YfIKNck8Eg62wC7Y5Q6GqqOi7zk88G-K8-ItgZ6lPYjkDRlNstweYXx";
+
+  // prod
+  // private static final String sasl_password =
+  //     "MrMhgRcyvQO81p4w7s-0xT5LbupFpb6q4sVS7M21QV8txH46mFAr6p14NqWUDbhQOHHH1qO2DXPXuUt8VDfwH4HI1DHjATZDczdoD6n0PxoksFLqzU1qHM84__J9VF2K";
+
+
+  // private static final String kafka_broker_prod = "kafka.prod.us-west-2.aws.proton.nordstrom.com:9093";
+  private static final String kafka_broker_nonprod = "kafka.nonprod.us-west-2.aws.proton.nordstrom.com:9093";
+
+
+  // private static final String schema_registry_url_prod = "https://schema-registry.prod.us-west-2.aws.proton.nordstrom.com";
+  private static final String schema_registry_url_nonprod = "https://schema-registry.nonprod.us-west-2.aws.proton.nordstrom.com";
 
   private static final Event event =
       Event.newBuilder()
           .setVersion("1.0")
-          .setId("abc123345677789")
-          .setCorrelationId("c226a9a2ff4b601e")
-          .setCreatedAt("2018-06-22T10:30:06.000Z")
-          .setPublishedAt("2018-06-22T10:30:06.000Z")
-          .setEntityId("null")
           .setEventName("SkuAdjusted")
+          .setId("abc123456test")
+          .setCorrelationId("c226a9a2ff4b601e")
+          .setCreatedAt("2019-03-06T10:30:06.000Z")
+          .setPublishedAt("2019-03-06T10:30:06.000Z")
+          .setEntityId("null")
           .setSources(List.of("WMi"))
           .setFacilityId("123")
           .setAdjustments(
               List.of(
                   InventoryAdjustment.newBuilder()
                       .setBelongsTo("Belongs To")
-                      .setWhy("reason code")
+                      .setWhy("some reason code")
                       .setChannel("FullPrice")
                       .setLocation(
                           Location.newBuilder().setFacilityId("89").setLogicalId("399").build())
@@ -91,8 +106,8 @@ public class SimpleKafkaProducer {
 
       // createTopic("test-avro", 15);
 
-      sendToLocalAvro();
-      // sendToPublicClusterAvro();
+      // sendToLocalAvro();
+      sendToPublicClusterAvro();
     } catch (Exception e) {
       e.printStackTrace();
     }
@@ -132,13 +147,15 @@ public class SimpleKafkaProducer {
 
     try {
 
-      ProducerRecord<Key, Event> record =
-          new ProducerRecord<>(
-              topicName, Key.newBuilder().setFacilityId(event.getFacilityId()).build(), event);
-      var metadata = producer.send(record);
+      for (int i = 0; i < 10; i++) {
+        ProducerRecord<Key, Event> record =
+            new ProducerRecord<>(
+                topicName, Key.newBuilder().setFacilityId(event.getFacilityId()).build(), event);
+        var metadata = producer.send(record);
 
-      // System.out.println("Sent message " + metadata);
-      log.info("Send Message: {}, {}", metadata.get().offset(), metadata.get().partition());
+        // System.out.println("Sent message " + metadata);
+        log.info("Send Message: {}, {}", metadata.get().offset(), metadata.get().partition());
+      }
     } catch (Exception e) {
       e.printStackTrace();
     } finally {
@@ -155,7 +172,7 @@ public class SimpleKafkaProducer {
         "org.apache.kafka.common.security.scram.ScramLoginModule required username=\"%s\" password=\"%s\";";
     var jaasConfig = String.format(jaasTemplate, sasl_username, sasl_password);
 
-    props.put("bootstrap.servers", "kafka.nonprod.us-west-2.aws.proton.nordstrom.com:9093");
+    props.put("bootstrap.servers", kafka_broker_nonprod);
 
     props.put("application.id", "proton-producer-sample");
 
@@ -195,9 +212,7 @@ public class SimpleKafkaProducer {
     // String schema_registry_url = "https://" + sasl_username + ":" + sasl_password
     //     + "@schema-registry.nonprod.us-west-2.aws.proton.nordstrom.com";
 
-    props.put(
-        AbstractKafkaAvroSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG,
-        "https://schema-registry.nonprod.us-west-2.aws.proton.nordstrom.com");
+    props.put(AbstractKafkaAvroSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG, schema_registry_url_nonprod);
 
     //    props.put(AbstractKafkaAvroSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG,
     //        "https://" + sasl_username + ":" + sasl_password

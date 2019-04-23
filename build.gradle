@@ -54,7 +54,7 @@ def lombokVersion = "1.18.2"
 
 dependencies {
 
-    compile "wine:canonical-entities:master-0.1.0-9ab66b1a33e447147d73ade839b3c5bde28bfc17"
+    compile "wine:canonical-entities:master-+"
     annotationProcessor "org.projectlombok:lombok:${lombokVersion}"
     compile "com.google.code.gson:gson:2.8.5"
     compile "commons-lang:commons-lang:2.2"
